@@ -4,7 +4,20 @@
   var blank = _proto({
     "common version" : "0.1",
     "common config" : {},
-
+    /*
+    TODO:
+    0.2
+    - strict extending: extensions, static calls, modules, packages, plugins (?)
+      function name add, mixin, plugin, method, module (?)
+      how-to plugins
+    0.3
+    - configuration agreement:
+      use method .config('module.key.key2', 'value')
+      
+      0.3.1
+      - namespaces
+    
+    */
     /*
       EXTENSIONS
     */
