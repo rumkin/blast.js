@@ -1,4 +1,4 @@
-blank.js
+blast.js
 ========
 
-blank is a js handy tools for fast start up
+Blast is a modern jQuery-like library without fallbacks
