@@ -6,6 +6,9 @@
 		, _concat = Array.prototype.concat
 
 	var Blast = blank.realize({
+		// Nodes data
+		"common dataMap" : new WeakMap,
+		// Select nodes on construct
 		constructor : function (selector, context) {
 			this.nodes = []
 
@@ -35,7 +38,7 @@
 		select : function(selector, context) {
 			var list = [], node, nodes
 
-			if (context.length == 1) {
+			if (context && context.length == 1) {
 				list = _slice.call(context[0].querySelectorAll(selector))
 			} else {
 				var i = -1, len = context.length, found = new Array(len)
@@ -44,7 +47,6 @@
 					list = list.concat(_slice.call(nodes))
 				}
 			}
-
 
 			list = this.unique(list)
 
@@ -142,7 +144,7 @@
 
 	Blast.mixin("appendTo", function (target) {
 		if (typeof target == "string") {
-			target = this.select(target)
+			target = this.select(target, [document])
 			if ( ! target.length) {
 				throw new Error("Target not found")
 			}
@@ -154,6 +156,7 @@
 			throw new Error("Target is not a node")
 		}
 
+		var nodes = this.nodes
 		for (var i = -1, l = nodes.length; l > (i += 1); ) {
 			target.appendChild(this.nodes[i])
 		}
@@ -161,9 +164,25 @@
 		return this
 	})
 
+	Blast.mixin("remove", function(){
+		var nodes = this.nodes
+			, node
+		for (var i = -1, l = nodes.length; l > (i += 1); ) {
+			node = nodes[i]
+			node.parentNode.removeChild(node)
+		}
+
+		this.nodes = []
+		return this
+	})
+
 
 	// EVENTS -------------------------------------------------------------------
-	
+
+	Blast.delegatedCall = function (e) {
+		console.log(e)
+	}
+
 	Blast.mixin("on", function(name, selector, callback){
 
 
@@ -173,9 +192,16 @@
 		}
 
 		var nodes = this.nodes
+			, node
+
 		for (var i = -1, l = nodes.length; l > (i += 1); ) {
+			node = nodes[i]
+			if (node.nodeType !== 1) continue
+
 			if ( ! selector) {
-				nodes[i].addEventListener(name, callback)
+				node.addEventListener(name, callback)
+			} else {
+				node.addEventListener(name, Blast.delegatedCall)
 			}
 		}
 
@@ -191,9 +217,17 @@
 
 
 		var nodes = this.nodes
+			, node 
+
 		for (var i = -1, l = nodes.length; l > (i += 1); ) {
+			node = nodes[i]
+			
+			if (node.nodeType !== 1) continue
+
 			if ( ! selector) {
-				nodes[i].removeEventListener(name, callback)
+				node.removeEventListener(name, callback)
+			} else {
+				node.addEventListener(name, Blast.delegatedCall)
 			}
 		}
 
@@ -208,12 +242,62 @@
 
 		// Trigger event
 		var nodes = this.nodes
+			, node
 		for (var i = -1, l = nodes.length; l > (i += 1); ) {
-			nodes[i].dispatchEvent(e)
+			node = nodes[i]
+			if (node.nodeType !== 1) continue
+
+			node.dispatchEvent(e)
 		}
 
 		return this
 	})
+
+	// MISCEALIOUS --------------------------------------------------------------
+
+	Blast.mixin("each", function(callback){
+
+		var nodes = this.nodes
+
+		for (var i = -1, l = nodes.length; l > (i += 1); ) {
+			callback(nodes[i], i)
+		}
+
+		return this
+
+	})
+
+	Blast.mixin("contains", function(search){
+
+		return this.nodes.indexOf(search)
+
+	})
+
+	Blast.mixin("store", function(key, value){
+		if (key === undefined) return this
+
+		if (arguments.length == 1) {
+			if (this.nodes.length) {
+				var store = this.dataMap.get(this.nodes[0], {})
+				return (key in store) ? store[key] : undefined
+			}
+			
+			return
+
+		} else {
+			var nodes = this.nodes
+				, node, store
+			for (var i = -1, l = nodes.length; l > (i += 1); ) {
+				node = nodes[i]
+				store = this.dataMap.get(node, {})
+
+				store[key] = value
+				this.dataMap.set(node, store)
+			}
+		}
+
+	})
+	
 
 
 	// EXPORT -------------------------------------------------------------------
